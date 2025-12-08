@@ -2,17 +2,33 @@
 # python实现 本地离线 图片文本识别
 ## 采用PaddleOCR
 
-首先安装
+效果如下
+| ![01](doc/01.png) | ![02](doc/02.png) |
+| ----------------- | ----------------- |
+
+### 安装环境
+
 ```shell
+#创建新的虚拟环境 （或者vscode自动创建）
+python -m venv .venv
+#激活新环境
+.venv\Scripts\activate.bat
+#安装插件
 pip install paddleocr paddlepaddle -i https://pypi.tuna.tsinghua.edu.cn/simple
 pip install customtkinter
 ```
-运行，首次运行会自动下模型
+
+### 运行
+
 ```shell
+#首次运行会自动下模型
 python.exe main.py
 ```
 
-## 简单实现
+
+
+### 简单demo
+
 ```python
 from paddleocr import PaddleOCR
 ocr = PaddleOCR(
