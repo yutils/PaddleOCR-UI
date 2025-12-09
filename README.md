@@ -26,7 +26,6 @@ python.exe main.py
 ```
 
 
-
 ### 简单demo
 
 ```python
@@ -63,3 +62,8 @@ pip install flask flask_cors
 ```shell
 python.exe web_api.py
 ```
+
+效果如下
+| ![01](doc/03.png) | ![02](doc/04.png) |
+| ----------------- | ----------------- |
+
