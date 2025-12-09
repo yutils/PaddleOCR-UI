@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR文本识别工具</title>
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Bootstrap 5 CDN for 美观布局 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            --secondary-gradient: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            --accent-gradient: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);
+        }
+
+        /* 桌面端样式 - 保持原有效果 */
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 4px 20px rgba(0, 123, 255, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(20px, 20px) rotate(360deg);
+            }
+        }
+
+        .upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.8);
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            @media (min-width: 768px)  {
+                 height: calc(100vh - 220px);
+            }
+           
+        }
+
+        .upload-area.dragover {
+            border-color: #28a745;
+            background: rgba(40, 167, 69, 0.1);
+            transform: scale(1.02);
+        }
+
+        .result-textarea {
+            resize: vertical;
+            min-height: 300px;
+            font-family: 'Courier New', monospace;
+            border-radius: 15px;
+            border: 1px solid #dee2e6;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        footer {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 15px 0;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            box-shadow: 0 -4px 20px rgba(0, 123, 255, 0.4);
+        }
+
+        .main-container {
+            height: calc(100vh - 140px);
+            /* 减去 header 和 footer 高度 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .btn-primary {
+            background: var(--secondary-gradient);
+            border: none;
+            border-radius: 25px;
+            padding: 8px 25px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+            color: white;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        /* 修复核心：重构图片容器样式 */
+        .img-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: auto;
+            /* 限制容器最大宽高，避免撑破布局 */
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* 关键：图片双向自适应规则 */
+        .img-container {
+            max-width: 100%;  /* 宽图以宽度为准 */
+            max-height: 100%; /* 高图以高度为准 */
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .upload-info {
+            font-size: 0.85em;
+        }
+
+        .upload-title {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #007bff;
+        }
+
+        .upload-desc {
+            margin-bottom: 20px;
+            opacity: 0.8;
+        }
+
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+
+        .btn-replace {
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
+            border-radius: 20px;
+            padding: 8px 20px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+        }
+
+        .btn-replace:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+            color: white;
+        }
+
+        .author-name {
+            font-style: italic;
+            font-weight: bold;
+        }
+
+        /* 移动端适配样式 (768px以下) */
+        @media (max-width: 767.98px) {
+            /* 允许body滚动 */
+            body {
+                height: auto;
+                overflow: auto;
+                min-height: 100vh;
+            }
+
+            /* 取消footer绝对定位，改为正常流 */
+            footer {
+                position: static;
+                margin-top: 20px;
+            }
+
+            /* 重设主容器样式，取消固定高度，改为自适应 */
+            .main-container {
+                height: auto;
+                min-height: calc(100vh - 100px);
+                display: block;
+                padding: 15px;
+                margin-bottom: 20px;
+                /* 移除默认的左右padding导致的居中问题 */
+                padding-left: 15px;
+                padding-right: 15px;
+                margin-left: auto;
+                margin-right: auto;
+                max-width: 100%;
+            }
+
+            /* 修复移动端上传区域居中问题 */
+            .row.w-100.h-100 {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                width: 100% !important;
+                margin: 0 auto;
+            }
+
+            .col-md-7 {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin: 0 auto !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+                width: 95% !important;
+                max-width: 100%;
+                height: 100%;
+            }
+            
+            .upload-area {
+                height: auto;
+                min-height: 350px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto;
+                width: 100%;
+            }
+            
+            .upload-info {
+                width: 100%;
+                padding: 0 10px;
+            }
+
+            /* 强化识别结果文本框最低高度 */
+            .result-textarea {
+                min-height: 550px !important;
+                width: 100%;
+            }
+
+            /* 移动端图片容器调整，避免高度过高 */
+            .img-container {
+                max-height: 400px;
+                margin: 10px 0;
+            }
+
+            /* 移动端列布局改为上下排列，宽度100% */
+            .col-md-5 {
+                width: 95% !important;
+                margin: 20px auto 0 auto !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 顶部标题 -->
+    <header class="text-center">
+        <h1 class="mb-1 fw-bold">OCR文本识别工具</h1>
+        <p class="mb-0 opacity-90">上传图片，智能提取文本内容</p>
+    </header>
+
+    <div id="app" class="main-container">
+        <div class="row w-100">
+            <!-- 左边分区：上传图片（区域更大） -->
+            <div class="col-md-7 d-flex align-items-center justify-content-center p-3">
+                <div class="upload-area w-100  d-flex flex-column" @dragover="handleDragOver"
+                    @dragleave="handleDragLeave" @drop="handleDrop">
+                    <input type="file" ref="fileInput" accept="image/*" @change="handleFileSelect" class="d-none">
+
+                    <!-- 上传提示信息，只有在无图片时显示 -->
+                    <div v-if="!selectedImage && !uploading"
+                        class="upload-info text-center flex-grow-1 d-flex flex-column justify-content-center">
+                        <h3 class="upload-title mb-2">上传图片进行OCR识别</h3>
+                        <p class="upload-desc text-muted mb-3">支持拖拽或点击选择图片文件（PNG/JPG）</p>
+                        <button class="btn btn-primary btn-lg mx-auto" @click="$refs.fileInput.click()">
+                            <i class="bi bi-cloud-upload me-2"></i>选择图片
+                        </button>
+                    </div>
+
+                    <!-- 加载中 -->
+                    <div v-if="uploading"
+                        class="flex-grow-1 d-flex flex-column align-items-center justify-content-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">识别中...</span>
+                        </div>
+                        <p class="text-primary mt-3">正在识别文本...</p>
+                    </div>
+
+                    <!-- 有图片时：更换按钮 + 图片 -->
+                    <div v-else-if="selectedImage" class="flex-grow-1 d-flex flex-column overflow-hidden">
+                        <div class="p-2 text-center">
+                            <button class="btn btn-replace" @click="$refs.fileInput.click()">
+                                <i class="bi bi-arrow-repeat me-2"></i>更换图片
+                            </button>
+                        </div>
+                        <div class="flex-grow-1 d-flex align-items-center justify-content-center p-2"
+                            style="overflow: hidden; height: calc(100% - 48px);">
+                               <img  class="img-container" :src="selectedImage" alt="上传的图片">
+                       </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右边分区：显示识别内容（多行文本框） -->
+            <div class="col-md-5 d-flex align-items-center justify-content-center p-3">
+                <div class="w-100 h-100 d-flex flex-column justify-content-center">
+                    <h3 class="text-center mb-4 text-secondary">识别结果</h3>
+                    <div v-if="recognizedText === ''"
+                        class="text-center text-muted h-100 d-flex flex-column align-items-center justify-content-center">
+                        <div>
+                            <i class="bi bi-file-earmark-text fs-1 mb-3 opacity-50"></i>
+                            <p class="lead">未识别到文本<br>请上传图片开始识别</p>
+                        </div>
+                    </div>
+                    <div v-else class="w-100 flex-grow-1 d-flex flex-column">
+                        <textarea v-model="recognizedText" class="form-control result-textarea flex-grow-1"
+                            placeholder="识别结果将显示在这里..." readonly></textarea>
+                        <button class="btn btn-outline-primary mt-3 align-self-end" @click="copyToClipboard">
+                            <i class="bi bi-copy me-1"></i>复制结果
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部页脚 -->
+    <footer class="text-center">
+        <p class="mb-0">&copy; 2025 OCR工具. <span class="author-name">by 雨季</span>. Powered by PaddleOCR & Vue.js.</p>
+    </footer>
+
+    <script>
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    selectedImage: null,
+                    results: [],
+                    recognizedText: '',
+                    uploading: false
+                };
+            },
+            methods: {
+                handleFileSelect(event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        this.previewImage(file);
+                    }
+                    // 清空 input 值，以便下次选择相同文件
+                    event.target.value = '';
+                },
+                handleDragOver(event) {
+                    event.preventDefault();
+                    event.currentTarget.classList.add('dragover');
+                },
+                handleDragLeave(event) {
+                    event.currentTarget.classList.remove('dragover');
+                },
+                handleDrop(event) {
+                    event.preventDefault();
+                    event.currentTarget.classList.remove('dragover');
+                    const file = event.dataTransfer.files[0];
+                    if (file && file.type.startsWith('image/')) {
+                        this.previewImage(file);
+                    }
+                },
+                previewImage(file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.selectedImage = e.target.result;
+                        this.performOCR(file);
+                    };
+                    reader.readAsDataURL(file);
+                },
+                async performOCR(file) {
+                    this.uploading = true;
+                    this.recognizedText = '';  // 清空之前结果
+
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    try {
+                        const response = await fetch('/ocr', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await response.json();
+
+                        if (data.results) {
+                            this.results = data.results;
+                            // 连接所有文本，每行一个
+                            this.recognizedText = data.results.map(item => item.text).join('\n');
+                        } else if (data.error) {
+                            alert('识别失败: ' + data.error);
+                        }
+                    } catch (error) {
+                        alert('请求失败: ' + error.message);
+                    } finally {
+                        this.uploading = false;
+                    }
+                },
+                copyToClipboard() {
+                    navigator.clipboard.writeText(this.recognizedText).then(() => {
+                        alert('复制成功！');
+                    }).catch(() => {
+                        alert('复制失败，请手动复制。');
+                    });
+                }
+            }
+        }).mount('#app');
+    </script>
+
+    <!-- Bootstrap Icons for icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</body>
+
+</html>
