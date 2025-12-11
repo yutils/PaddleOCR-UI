@@ -13,10 +13,25 @@
 python -m venv .venv
 #激活新环境
 .venv\Scripts\activate.bat
-#安装插件
-pip install paddleocr paddlepaddle -i https://pypi.tuna.tsinghua.edu.cn/simple
+```
+### 安装依赖 CPU模式
+```shell
+pip install paddlepaddle paddleocr customtkinter
+```
+### 安装依赖 GPU模式
+
+**一键安装：pip install -r requirements.txt**
+
+```shell
+#安装paddlepaddle
+python -m pip install paddlepaddle-gpu==3.2.2 -i https://www.paddlepaddle.org.cn/packages/stable/cu129/
+#安装paddleocr
+pip install paddleocr
+#安装UI库
 pip install customtkinter
 ```
+PaddleOCR开源地址：https://github.com/PaddlePaddle/PaddleOCR  
+飞桨：https://www.paddlepaddle.org.cn/  
 
 ### 运行
 
