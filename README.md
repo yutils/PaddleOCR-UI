@@ -1,4 +1,5 @@
 
+
 # python实现 本地离线 图片文本识别
 ## 采用PaddleOCR
 
@@ -73,7 +74,7 @@ for res in result:
 pip install flask flask_cors
 ```
 
-启动
+启动（默认端口 5000，浏览器将自动打开）
 ```shell
 python.exe web_api.py
 ```
@@ -81,4 +82,3 @@ python.exe web_api.py
 效果如下
 | ![01](doc/03.png) | ![02](doc/04.png) |
 | ----------------- | ----------------- |
-
